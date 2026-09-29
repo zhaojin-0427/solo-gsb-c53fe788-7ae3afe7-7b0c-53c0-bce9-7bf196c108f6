@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>剪辑素材授权覆盖台</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>剪辑素材授权覆盖台</h1>
+  <span class="subtitle">时间线素材使用范围核验</span>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <button id="new-project-btn" class="btn btn-primary">＋ 新建工程</button>
+    <ul id="project-list" class="project-list"></ul>
+  </aside>
+
+  <main class="content">
+    <div id="empty-state" class="empty-state">
+      <p>请选择或新建一个工程开始核验。</p>
+    </div>
+
+    <div id="project-view" class="hidden">
+      <div class="project-header">
+        <h2 id="project-name"></h2>
+        <span id="project-meta" class="meta"></span>
+      </div>
+
+      <nav class="tabs">
+        <button class="tab active" data-tab="timeline">时间线</button>
+        <button class="tab" data-tab="authorizations">授权</button>
+        <button class="tab" data-tab="verify">核验</button>
+      </nav>
+
+      <section id="tab-timeline" class="tab-panel active">
+        <div class="panel-block">
+          <h3>素材总帧数</h3>
+          <p id="tl-total-frames" class="big-num"></p>
+        </div>
+        <div class="panel-block">
+          <h3>片段列表</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>名称</th>
+                <th>输出区间 [起, 止)</th>
+                <th>源起帧</th>
+                <th>速度</th>
+              </tr>
+            </thead>
+            <tbody id="clips-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-authorizations" class="tab-panel">
+        <div class="panel-block">
+          <h3>登记授权</h3>
+          <form id="auth-form" class="inline-form">
+            <div class="form-row">
+              <label>源帧起 <input type="number" id="auth-source-start" min="0" required></label>
+              <label>源帧止 <input type="number" id="auth-source-end" min="1" required></label>
+            </div>
+            <div class="form-row">
+              <label>有效起 <input type="date" id="auth-valid-from" required></label>
+              <label>有效止 <input type="date" id="auth-valid-to" required></label>
+            </div>
+            <div class="form-row">
+              <label>地区 <input type="text" id="auth-region" placeholder="如 CN" required></label>
+              <label>渠道 <input type="text" id="auth-channel" placeholder="如 院线" required></label>
+            </div>
+            <button type="submit" class="btn btn-primary">添加授权</button>
+          </form>
+        </div>
+        <div class="panel-block">
+          <h3>已登记授权 <span id="auth-count" class="meta"></span></h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>源帧区间</th>
+                <th>有效期</th>
+                <th>地区</th>
+                <th>渠道</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="auths-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-verify" class="tab-panel">
+        <div class="panel-block">
+          <h3>核验条件</h3>
+          <form id="verify-form" class="inline-form">
+            <div class="form-row">
+              <label>播出日期 <input type="date" id="verify-date" required></label>
+              <label>地区 <input type="text" id="verify-region" placeholder="如 CN" required></label>
+              <label>渠道 <input type="text" id="verify-channel" placeholder="如 院线" required></label>
+            </div>
+            <button type="submit" class="btn btn-primary">开始核验</button>
+          </form>
+        </div>
+
+        <div id="verify-results" class="hidden">
+          <div class="panel-block">
+            <h3>核验结果</h3>
+            <div class="summary">
+              <div class="summary-item">
+                <span class="summary-label">违规片段</span>
+                <span id="sum-segments" class="summary-num">0</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">违规总帧数</span>
+                <span id="sum-frames" class="summary-num">0</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">时间线总帧数</span>
+                <span id="sum-total" class="summary-num">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-block">
+            <h3>时间轴定位</h3>
+            <canvas id="timeline-canvas" height="60"></canvas>
+            <div class="legend">
+              <span class="legend-item"><span class="swatch swatch-ok"></span>已覆盖</span>
+              <span class="legend-item"><span class="swatch swatch-bad"></span>违规</span>
+              <span class="legend-item"><span class="swatch swatch-blank"></span>空白帧</span>
+            </div>
+          </div>
+          <div class="panel-block">
+            <h3>违规明细</h3>
+            <div id="violation-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <h3 id="modal-title">新建工程</h3>
+    <form id="modal-form">
+      <label>工程名称 <input type="text" id="modal-name" required></label>
+      <label>时间线 JSON
+        <textarea id="modal-timeline" rows="12" required placeholder='{"total_frames":1000,"clips":[{"name":"片段A","output_start":0,"output_end":100,"source_start":0,"speed":"1/2"}]}'></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="modal-cancel" class="btn">取消</button>
+        <button type="submit" class="btn btn-primary">创建</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
