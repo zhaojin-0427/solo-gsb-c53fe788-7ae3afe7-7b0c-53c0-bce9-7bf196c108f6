@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>剪辑素材授权覆盖台</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header>
+  <h1>🎬 剪辑素材授权覆盖台</h1>
+  <span class="sub">发布前核对时间线素材使用范围 · 帧级区间核验（不逐帧展开）</span>
+</header>
+
+<div class="layout">
+  <!-- 左列 -->
+  <div>
+    <div class="panel">
+      <h2>工程
+        <button class="small" onclick="newProject()">＋ 新建</button>
+      </h2>
+      <div id="projectList"></div>
+    </div>
+
+    <div class="panel" id="verifyPanel" style="display:none">
+      <h2>播出维度 &amp; 核验</h2>
+      <label>播出日期</label>
+      <input type="date" id="selDate">
+      <div class="row">
+        <div style="flex:1">
+          <label>地区</label>
+          <input type="text" id="selRegion" placeholder="如 CN" value="CN">
+        </div>
+        <div style="flex:1">
+          <label>渠道</label>
+          <input type="text" id="selChannel" placeholder="如 TV" value="TV">
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button onclick="runVerify()">▶ 执行核验</button>
+      </div>
+      <p class="muted" style="margin-bottom:0">
+        授权日期区间含首尾（<span class="mono">[date_from, date_to]</span>），
+        地区与渠道为精确匹配。
+      </p>
+    </div>
+  </div>
+
+  <!-- 右列 -->
+  <div>
+    <div class="panel" id="introPanel">
+      <div class="empty">
+        请先在左侧选择或新建一个工程。<br><br>
+        工作流：导入时间线 JSON → 登记素材源帧授权 → 选择播出日期/地区/渠道 → 执行核验<br>
+        修改授权后可随时重新核验，结果与违规缺口定位立即刷新。
+      </div>
+    </div>
+
+    <div id="workArea" style="display:none">
+      <div class="panel">
+        <h2>① 时间线导入
+          <span class="row">
+            <button class="small ghost" onclick="loadDemo()">载入示例</button>
+            <button class="small ghost" onclick="reformatTimeline()">格式化</button>
+          </span>
+        </h2>
+        <label>时间线 JSON（帧为单位；速度为非零有符号分数；输出/源帧区间均为半开 [lo, hi)）</label>
+        <textarea id="timelineInput" rows="10" spellcheck="false"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button onclick="importTimeline()">导入时间线</button>
+          <span id="timelineMeta" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>② 授权登记</h2>
+        <div class="row wrap">
+          <div style="flex:1;min-width:120px">
+            <label>素材</label>
+            <select id="authMaterial"></select>
+          </div>
+          <div style="width:90px">
+            <label>源帧起</label>
+            <input type="number" id="authLo" value="0">
+          </div>
+          <div style="width:90px">
+            <label>源帧止(不含)</label>
+            <input type="number" id="authHi" value="100">
+          </div>
+        </div>
+        <div class="row wrap">
+          <div style="flex:1;min-width:120px">
+            <label>生效起</label>
+            <input type="date" id="authDateFrom">
+          </div>
+          <div style="flex:1;min-width:120px">
+            <label>生效止</label>
+            <input type="date" id="authDateTo">
+          </div>
+          <div style="width:80px">
+            <label>地区</label>
+            <input type="text" id="authRegion" value="CN">
+          </div>
+          <div style="width:80px">
+            <label>渠道</label>
+            <input type="text" id="authChannel" value="TV">
+          </div>
+        </div>
+        <label>备注（可选）</label>
+        <input type="text" id="authNote" placeholder="如 版权方-A / 合同编号">
+        <div class="row" style="margin-top:8px">
+          <button onclick="addAuth()">＋ 添加授权</button>
+        </div>
+        <div style="margin-top:12px">
+          <table>
+            <thead><tr>
+              <th>素材</th><th>源帧区间</th><th>有效期</th><th>地区</th><th>渠道</th><th>备注</th><th></th>
+            </tr></thead>
+            <tbody id="authTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>③ 核验结果</h2>
+        <div id="verifySummary"></div>
+        <div id="timelineViz"></div>
+        <div id="violationList" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
